@@ -24,8 +24,10 @@ FROM node:24-bookworm-slim AS app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4310 DATABASE_PATH=/data/opendots.sqlite
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev && mkdir -p /data && chown node:node /data
+# NOTE: intentionally no `USER node` here. Hosted volume mounts (e.g. Railway)
+# arrive root-owned at runtime, which masks any build-time chown of /data and
+# makes SQLite fail with "unable to open database file" for a non-root user.
+RUN npm ci --omit=dev && mkdir -p /data
 COPY --from=build /app/dist ./dist
-USER node
 EXPOSE 4310
 CMD ["node", "dist/server/server/index.js"]
